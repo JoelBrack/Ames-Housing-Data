@@ -1,0 +1,12 @@
+---
+title: "Ames Housing EDA and Cleaning"
+author: "Joel Bracken"
+date: "March 25, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Test
