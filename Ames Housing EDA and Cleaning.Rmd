@@ -15,13 +15,12 @@ require(glmnet)
 require(MASS)
 require(fmsb)
 require(lars)
-require(regclass)
-knitr::opts_chunk$set(echo = FALSE)
+
 ```
 
+The goal of this analysis is to predict the sale price of a piece of property in Ames, Iowa. First, we examine the distribution of both Sale Price and the log of Sale Price. 
 
-
-```{r, echo=FALSE,fig.height= 4 ,fig.height= 4 }
+```{r,fig.height= 4 ,fig.height= 4 }
 
 setwd("~/PracProj/Ames Housing Data/Ames-Housing-Data") #set working directory
 data <- read.csv("AmesHousing.csv",row.names = 1)
@@ -30,10 +29,8 @@ hist(data$SalePrice)
 qqnorm(data$SalePrice)
 hist(log(data$SalePrice))        
 qqnorm(log(data$SalePrice))
-
-colnames(data)
-
 ```
+Each potential predictor was analyzed by itself (this was excluded due to length). Variables in the 'remove' group were removed for various reasons including a high percentage of NA or low variability between levels. For example, the utilities variable contained 2927 lots labeled 'AllPub' , 1 labeled 'NoseWa', and 2 labeled 'NoSewr'. Variables in the 'convert' group were used to make new variables and then removed afterwards. For example, the second floor square footage variable was changed into a yes/no variable to indicate if the house had a second floor or not.
 
 ```{r}
 remove <- c('PID','MS.Zoning', 'MS.SubClass', "Street", "Alley", "Land.Contour","Utilities" , "Land.Slope",
@@ -41,12 +38,13 @@ remove <- c('PID','MS.Zoning', 'MS.SubClass', "Street", "Alley", "Land.Contour",
             "BsmtFin.Type.2", "BsmtFin.SF.1", "BsmtFin.SF.2", "Heating", "CentralAir", "Electrical",
             "Low.Qual.Fin.SF", "X1st.Flr.SF", "Kitchen.AbvGr", "Garage.Qual",
             "Garage.Cond", "Pool.QC", "Misc.Feature", "Pool.Area","Fireplace.Qu", "Neighborhood",
-            "Exterior.1st", "Exterior.2nd")
+            "Exterior.1st", "Exterior.2nd", 'Lot.Frontage')
 
 
 convert <- c("Mas.Vnr.Type", "Bsmt.Full.Bath", "Bsmt.Half.Bath","Mas.Vnr.Area", "Wood.Deck.SF",
              "Full.Bath", "Half.Bath", "Open.Porch.SF", "X2nd.Flr.SF", "Fireplaces",
-             "Enclosed.Porch", "X3Ssn.Porch", "Screen.Porch", "Fence", "Mo.Sold")
+             "Enclosed.Porch", "X3Ssn.Porch", "Screen.Porch", "Fence", "Mo.Sold", 'Garage.Type',
+             'Garage.Yr.Blt', 'Garage.Finish')
 
 # Function to change zeros to No and others to Yes
 num.to.bin.cat <- function(list){
@@ -56,8 +54,6 @@ num.to.bin.cat <- function(list){
   list[yes] <- "Yes"
   return(as.factor(list))
 }
-
-
 # Change continuous variables to categrical 
 data$Mas.Vnr <- num.to.bin.cat(data$Mas.Vnr.Area)
 data$Two.Floors <- num.to.bin.cat(data$X2nd.Flr.SF)
@@ -76,6 +72,9 @@ data$Fence <- as.factor(data$Fence)
 # Represent bathrooms by single number
 data$Bath <- (data$Bsmt.Full.Bath + data$Bsmt.Half.Bath/2)+ (data$Full.Bath + data$Half.Bath/2)
 
+# Garage or not
+data$Garage[which(!is.na(data$Garage.Yr.Blt))] <- "Yes"
+data$Garage[which(is.na(data$Garage.Yr.Blt))] <- "No"
 
 # month to season 
 data$Mo.Sold <- data$Mo.Sold +1
@@ -98,7 +97,29 @@ for (i in 1:length(seas_int)) {
 data.clean <- data[,-c( which(names(data) %in% remove),which(names(data) %in% convert))]
 ```
 
+The top 5 largest houses were removed from the data set since they were high outliers. Eighty-one observations were removed due to missing data.
+
 ```{r}
-head(data.clean)
+tail(sort(data.clean$Gr.Liv.Area), n = 50) # exclude houses over 4,000 sq ft as suggested in handout
+data.clean <- data.clean[ which(data.clean$Gr.Liv.Area < 4000), ]    #remove houses over 4,000 sq ft
+
+na_count <-sapply(data.clean, function(y) sum(length(which(is.na(y))))) 
+na_count
+data.final = na.omit(data.clean)
 ```
+
+Create 80% train and 20% test set and store in new CSV files.
+
+```{r}
+set.seed(555) 
+trainindex <- sample.int(nrow(data.final),size = nrow(data.final)*.80, replace= FALSE) # 80/20 split
+
+Amestrain <- data.final[trainindex,]
+Amestest <- data.final[-trainindex,]
+
+#write.csv(Amestrain, file="Amestrain.csv", quote=F, row.names=F)
+#write.csv(Amestest, file="Amestest.csv", quote=F, row.names=F)
+```
+
+
 
