@@ -29,6 +29,7 @@ hist(data$SalePrice)
 qqnorm(data$SalePrice)
 hist(log(data$SalePrice))        
 qqnorm(log(data$SalePrice))
+data$logSalePrice <- log(data$SalePrice)
 ```
 Each potential predictor was analyzed by itself (this was excluded due to length). Variables in the 'remove' group were removed for various reasons including a high percentage of NA or low variability between levels. For example, the utilities variable contained 2927 lots labeled 'AllPub' , 1 labeled 'NoseWa', and 2 labeled 'NoSewr'. Variables in the 'convert' group were used to make new variables and then removed afterwards. For example, the second floor square footage variable was changed into a yes/no variable to indicate if the house had a second floor or not.
 
